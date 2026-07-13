@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0
+      http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+    <kcfgfile name=""/>
+    <group name="General">
+        <entry name="updateInterval" type="Int">
+            <default>2</default>
+        </entry>
+        <entry name="ramThreshold" type="Int">
+            <default>85</default>
+        </entry>
+        <entry name="diskThreshold" type="Int">
+            <default>90</default>
+        </entry>
+        <entry name="cpuUsageThreshold" type="Int">
+            <default>90</default>
+        </entry>
+        <entry name="cpuTempThreshold" type="Int">
+            <default>80</default>
+        </entry>
+        <entry name="gpuUsageThreshold" type="Int">
+            <default>98</default>
+        </entry>
+        <entry name="gpuTempThreshold" type="Int">
+            <default>80</default>
+        </entry>
+    </group>
+</kcfg>
