@@ -90,20 +90,17 @@ KCM.SimpleKCM {
         cfg_gpuTempThreshold = cfg_gpuTempThresholdDefault;
     }
 
+    // Rendered right-aligned on the page-title row by the dialog's header
+    actions: [
+        Kirigami.Action {
+            icon.name: "document-revert"
+            text: i18n("Restore Defaults")
+            onTriggered: page.restoreDefaults()
+        }
+    ]
+
     ColumnLayout {
         spacing: Kirigami.Units.largeSpacing
-
-        RowLayout {
-            Layout.fillWidth: true
-
-            Item { Layout.fillWidth: true }
-
-            QQC2.Button {
-                icon.name: "document-revert"
-                text: i18n("Restore defaults")
-                onClicked: page.restoreDefaults()
-            }
-        }
 
         GridLayout {
             columns: 2

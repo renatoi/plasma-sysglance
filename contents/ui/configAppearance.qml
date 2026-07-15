@@ -16,6 +16,15 @@ KCM.SimpleKCM {
     topPadding: Kirigami.Units.largeSpacing
     bottomPadding: Kirigami.Units.largeSpacing
 
+    // Rendered right-aligned on the page-title row by the dialog's header
+    actions: [
+        Kirigami.Action {
+            icon.name: "document-revert"
+            text: i18n("Restore Defaults")
+            onTriggered: page.restoreDefaults()
+        }
+    ]
+
     // Absorb the cfg_<key>Default initial properties the config dialog sets
     property string cfg_metricOrderDefault: ""
     property bool cfg_ramShownDefault: false
@@ -438,20 +447,9 @@ KCM.SimpleKCM {
     ColumnLayout {
         spacing: Kirigami.Units.smallSpacing
 
-        RowLayout {
-            Layout.fillWidth: true
-
-            Kirigami.Heading {
-                level: 4
-                text: i18n("Preview")
-                Layout.fillWidth: true
-            }
-
-            QQC2.Button {
-                icon.name: "document-revert"
-                text: i18n("Restore defaults")
-                onClicked: page.restoreDefaults()
-            }
+        Kirigami.Heading {
+            level: 4
+            text: i18n("Preview")
         }
 
         QQC2.Frame {
