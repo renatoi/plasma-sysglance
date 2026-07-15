@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 env:
-  PKG: com.renato.sysglance
+  PKG: com.nerdstrike.sysglance
 
 jobs:
   release:

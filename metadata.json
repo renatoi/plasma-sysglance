@@ -2,7 +2,7 @@
     "KPackageStructure": "Plasma/Applet",
     "KPlugin": {
         "Name": "System Glance",
-        "Id": "com.renato.sysglance",
+        "Id": "com.nerdstrike.sysglance",
         "Description": "RAM, disk, CPU and GPU usage and temperatures in one labeled row",
         "Category": "System Information",
         "Icon": "utilities-system-monitor",
@@ -11,7 +11,7 @@
                 "Name": "Renato"
             }
         ],
-        "Version": "2.1",
+        "Version": "2.2",
         "License": "MIT"
     },
     "X-Plasma-API-Minimum-Version": "6.0",
