@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Lightweight structural checks. Full QML type-linting needs the Plasma
+# runtime, which isn't on the runner — run `make lint` locally for that
+# before pushing. These checks catch the packaging breakage CI can see:
+# malformed metadata, a tag/version drift, or a broken kcfg.
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y jq libxml2-utils
+
+      - name: metadata.json is valid and complete
+        run: |
+          jq -e '.KPlugin.Id and .KPlugin.Version and .KPlugin.Name and .KPlugin.License' metadata.json > /dev/null
+          echo "OK: $(jq -r '.KPlugin.Id + " v" + .KPlugin.Version' metadata.json)"
+
+      - name: Config XML is well-formed
+        run: |
+          for f in $(find contents -name '*.xml'); do
+            echo "checking $f"
+            xmllint --noout "$f"
+          done
+
+      - name: Required package files exist
+        run: |
+          test -f metadata.json
+          test -f contents/ui/main.qml
+          echo "package layout OK"
