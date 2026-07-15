@@ -241,11 +241,54 @@ KCM.SimpleKCM {
     property alias cfg_customSeparatorColor: separatorColorRow.custom
     property alias cfg_customWarningColor: warningColorRow.custom
     property alias cfg_customCriticalColor: criticalColorRow.custom
-    property alias cfg_textColor: textColorRow.color
-    property alias cfg_labelColor: labelColorRow.color
-    property alias cfg_separatorColor: separatorColorRow.color
-    property alias cfg_warningColor: warningColorRow.color
-    property alias cfg_criticalColor: criticalColorRow.color
+    property alias cfg_textColor: textColorRow.stored
+    property alias cfg_labelColor: labelColorRow.stored
+    property alias cfg_separatorColor: separatorColorRow.stored
+    property alias cfg_warningColor: warningColorRow.stored
+    property alias cfg_criticalColor: criticalColorRow.stored
+
+    // Reset every Appearance option to its main.xml default (the dialog
+    // injects the defaults as cfg_<key>Default).
+    function restoreDefaults() {
+        cfg_metricOrder = cfg_metricOrderDefault;
+        cfg_ramShown = cfg_ramShownDefault;
+        cfg_diskShown = cfg_diskShownDefault;
+        cfg_cpuShown = cfg_cpuShownDefault;
+        cfg_gpuShown = cfg_gpuShownDefault;
+        cfg_ramParts = cfg_ramPartsDefault;
+        cfg_diskParts = cfg_diskPartsDefault;
+        cfg_cpuParts = cfg_cpuPartsDefault;
+        cfg_gpuParts = cfg_gpuPartsDefault;
+        cfg_ramFormat = cfg_ramFormatDefault;
+        cfg_diskFormat = cfg_diskFormatDefault;
+        cfg_cpuFormat = cfg_cpuFormatDefault;
+        cfg_gpuFormat = cfg_gpuFormatDefault;
+        cfg_labelStyle = cfg_labelStyleDefault;
+        cfg_ramLabel = cfg_ramLabelDefault;
+        cfg_diskLabel = cfg_diskLabelDefault;
+        cfg_cpuLabel = cfg_cpuLabelDefault;
+        cfg_gpuLabel = cfg_gpuLabelDefault;
+        cfg_ramIcon = cfg_ramIconDefault;
+        cfg_diskIcon = cfg_diskIconDefault;
+        cfg_cpuIcon = cfg_cpuIconDefault;
+        cfg_gpuIcon = cfg_gpuIconDefault;
+        cfg_fontFamily = cfg_fontFamilyDefault;
+        cfg_fontSize = cfg_fontSizeDefault;
+        cfg_valueWidth = cfg_valueWidthDefault;
+        cfg_valueGap = cfg_valueGapDefault;
+        cfg_groupGap = cfg_groupGapDefault;
+        cfg_showSeparators = cfg_showSeparatorsDefault;
+        cfg_customTextColor = cfg_customTextColorDefault;
+        cfg_customLabelColor = cfg_customLabelColorDefault;
+        cfg_customSeparatorColor = cfg_customSeparatorColorDefault;
+        cfg_customWarningColor = cfg_customWarningColorDefault;
+        cfg_customCriticalColor = cfg_customCriticalColorDefault;
+        cfg_textColor = cfg_textColorDefault;
+        cfg_labelColor = cfg_labelColorDefault;
+        cfg_separatorColor = cfg_separatorColorDefault;
+        cfg_warningColor = cfg_warningColorDefault;
+        cfg_criticalColor = cfg_criticalColorDefault;
+    }
 
     component DisplayCombo : QQC2.ComboBox {
         textRole: "text"
@@ -267,19 +310,43 @@ KCM.SimpleKCM {
         enabled: page.cfg_labelStyle === 0
     }
 
-    // One color: "Custom" checkbox + picker; unchecked follows the theme
+    // One color: the button always shows the effective color — the theme's
+    // until the user picks one (which flips `custom` on). The revert button
+    // returns it to following the theme. `accepted` fires only on a real
+    // user pick, so programmatic syncs can't accidentally set the flag.
     component ColorRow : RowLayout {
-        property alias custom: check.checked
-        property alias color: button.color
+        id: colorRow
+
+        property bool custom
+        property string stored
+        property color themeColor
+
         spacing: Kirigami.Units.smallSpacing
 
-        QQC2.CheckBox {
-            id: check
-            text: i18n("Custom")
+        function syncColor() {
+            button.color = custom ? stored : themeColor;
         }
+        onCustomChanged: syncColor()
+        onStoredChanged: syncColor()
+        onThemeColorChanged: syncColor()
+        Component.onCompleted: syncColor()
+
         KQuickControls.ColorButton {
             id: button
-            enabled: check.checked
+            onAccepted: acceptedColor => {
+                colorRow.stored = String(acceptedColor);
+                colorRow.custom = true;
+            }
+        }
+
+        QQC2.ToolButton {
+            icon.name: "edit-undo"
+            visible: colorRow.custom
+            text: i18n("Follow the theme again")
+            display: QQC2.ToolButton.IconOnly
+            QQC2.ToolTip.text: text
+            QQC2.ToolTip.visible: hovered
+            onClicked: colorRow.custom = false
         }
     }
 
@@ -371,9 +438,20 @@ KCM.SimpleKCM {
     ColumnLayout {
         spacing: Kirigami.Units.smallSpacing
 
-        Kirigami.Heading {
-            level: 4
-            text: i18n("Preview")
+        RowLayout {
+            Layout.fillWidth: true
+
+            Kirigami.Heading {
+                level: 4
+                text: i18n("Preview")
+                Layout.fillWidth: true
+            }
+
+            QQC2.Button {
+                icon.name: "document-revert"
+                text: i18n("Restore defaults")
+                onClicked: page.restoreDefaults()
+            }
         }
 
         QQC2.Frame {
@@ -743,20 +821,22 @@ KCM.SimpleKCM {
 
             QQC2.Label {
                 Layout.columnSpan: 2
-                text: i18n("Each color follows the system theme unless set to custom.")
+                text: i18n("Colors follow the system theme until you pick one; the undo button next to a picked color reverts it to the theme.")
+                Layout.maximumWidth: Kirigami.Units.gridUnit * 25
                 font: Kirigami.Theme.smallFont
+                wrapMode: Text.WordWrap
             }
 
             FieldLabel { text: i18n("Values:") }
-            ColorRow { id: textColorRow }
+            ColorRow { id: textColorRow; themeColor: Kirigami.Theme.textColor }
             FieldLabel { text: i18n("Labels:") }
-            ColorRow { id: labelColorRow }
+            ColorRow { id: labelColorRow; themeColor: Kirigami.Theme.disabledTextColor }
             FieldLabel { text: i18n("Separators:") }
-            ColorRow { id: separatorColorRow; enabled: showSeparatorsCheck.checked }
+            ColorRow { id: separatorColorRow; themeColor: Kirigami.Theme.disabledTextColor; enabled: showSeparatorsCheck.checked }
             FieldLabel { text: i18n("Warning (amber):") }
-            ColorRow { id: warningColorRow }
+            ColorRow { id: warningColorRow; themeColor: Kirigami.Theme.neutralTextColor }
             FieldLabel { text: i18n("Critical (red):") }
-            ColorRow { id: criticalColorRow }
+            ColorRow { id: criticalColorRow; themeColor: Kirigami.Theme.negativeTextColor }
         }
     }
 }

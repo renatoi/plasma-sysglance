@@ -79,8 +79,31 @@ KCM.SimpleKCM {
     // Plain two-column grid instead of Kirigami.FormLayout: the form hugs
     // the left edge rather than centering in the page (which left a large
     // dead zone on the left).
+    // Reset every General option to its main.xml default
+    function restoreDefaults() {
+        cfg_updateInterval = cfg_updateIntervalDefault;
+        cfg_ramThreshold = cfg_ramThresholdDefault;
+        cfg_diskThreshold = cfg_diskThresholdDefault;
+        cfg_cpuUsageThreshold = cfg_cpuUsageThresholdDefault;
+        cfg_cpuTempThreshold = cfg_cpuTempThresholdDefault;
+        cfg_gpuUsageThreshold = cfg_gpuUsageThresholdDefault;
+        cfg_gpuTempThreshold = cfg_gpuTempThresholdDefault;
+    }
+
     ColumnLayout {
         spacing: Kirigami.Units.largeSpacing
+
+        RowLayout {
+            Layout.fillWidth: true
+
+            Item { Layout.fillWidth: true }
+
+            QQC2.Button {
+                icon.name: "document-revert"
+                text: i18n("Restore defaults")
+                onClicked: page.restoreDefaults()
+            }
+        }
 
         GridLayout {
             columns: 2
