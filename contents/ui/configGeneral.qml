@@ -76,9 +76,6 @@ KCM.SimpleKCM {
         Layout.alignment: Qt.AlignRight
     }
 
-    // Plain two-column grid instead of Kirigami.FormLayout: the form hugs
-    // the left edge rather than centering in the page (which left a large
-    // dead zone on the left).
     // Reset every General option to its main.xml default
     function restoreDefaults() {
         cfg_updateInterval = cfg_updateIntervalDefault;
@@ -99,6 +96,9 @@ KCM.SimpleKCM {
         }
     ]
 
+    // Plain two-column grid instead of Kirigami.FormLayout: the form hugs
+    // the left edge rather than centering in the page (which left a large
+    // dead zone on the left).
     ColumnLayout {
         spacing: Kirigami.Units.largeSpacing
 

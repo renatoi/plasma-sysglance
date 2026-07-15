@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and versions follow the `Version` field in `metadata.json` (tag `v<version>`).
 
+## [2.1] - 2026-07-15
+
+### Added
+- "Restore Defaults" action in each settings page's title bar.
+
+### Changed
+- Color pickers now always show the effective color (the theme's until you
+  pick one), with an undo button to return a picked color to the theme —
+  replacing the per-color "Custom" checkboxes.
+
 ## [2.0] - 2026-07-15
 
 ### Added
