@@ -20,6 +20,8 @@ PlasmoidItem {
     Sensors.Sensor { id: ramSensor;    sensorId: "memory/physical/usedPercent"; updateRateLimit: root.rateMs }
     Sensors.Sensor { id: ramUsed;      sensorId: "memory/physical/used";        updateRateLimit: root.rateMs }
     Sensors.Sensor { id: ramTotal;     sensorId: "memory/physical/total";       updateRateLimit: root.rateMs }
+    Sensors.Sensor { id: ramFree;      sensorId: "memory/physical/free";        updateRateLimit: root.rateMs }
+    Sensors.Sensor { id: diskFree;     sensorId: "disk/all/free";               updateRateLimit: root.rateMs }
     Sensors.Sensor { id: diskSensor;   sensorId: "disk/all/usedPercent";        updateRateLimit: root.rateMs }
     Sensors.Sensor { id: diskUsed;     sensorId: "disk/all/used";               updateRateLimit: root.rateMs }
     Sensors.Sensor { id: diskTotal;    sensorId: "disk/all/total";              updateRateLimit: root.rateMs }
@@ -70,9 +72,9 @@ PlasmoidItem {
     }
 
     function tierColor(t) {
-        return t === 2 ? Kirigami.Theme.negativeTextColor
-             : t === 1 ? Kirigami.Theme.neutralTextColor
-             : Kirigami.Theme.textColor;
+        return t === 2 ? root.critColor
+             : t === 1 ? root.warnColor
+             : root.valueColor;
     }
 
     function pct(v) {
@@ -87,6 +89,142 @@ PlasmoidItem {
         const v = sensor.formattedValue;
         return (v === undefined || v === "") ? "—" : v;
     }
+
+    // --- Panel strip content ---------------------------------------------
+    // The strip renders visibleMetrics: metricOrder (left-to-right, drag to
+    // reorder in settings) filtered to shown metrics, each with an ordered
+    // list of parts — "usage" (percent), "temp" (temperature), "abs" (used
+    // amount). Adding a metric or part = a branch in the helpers below plus
+    // a row/combo entry in configAppearance.qml.
+    readonly property var visibleMetrics: {
+        const shown = {
+            ram: Plasmoid.configuration.ramShown,
+            disk: Plasmoid.configuration.diskShown,
+            cpu: Plasmoid.configuration.cpuShown,
+            gpu: Plasmoid.configuration.gpuShown
+        };
+        const parts = {
+            ram: Plasmoid.configuration.ramParts,
+            disk: Plasmoid.configuration.diskParts,
+            cpu: Plasmoid.configuration.cpuParts,
+            gpu: Plasmoid.configuration.gpuParts
+        };
+        return Plasmoid.configuration.metricOrder.split(",")
+            .map(k => k.trim())
+            .filter(k => shown[k] !== undefined && shown[k] && parts[k] !== "")
+            .map(k => ({ key: k, parts: parts[k].split(",") }));
+    }
+
+    function metricLabel(metric) {
+        return metric === "ram" ? Plasmoid.configuration.ramLabel
+             : metric === "disk" ? Plasmoid.configuration.diskLabel
+             : metric === "cpu" ? Plasmoid.configuration.cpuLabel
+             : Plasmoid.configuration.gpuLabel;
+    }
+
+    function metricIcon(metric) {
+        return metric === "ram" ? Plasmoid.configuration.ramIcon
+             : metric === "disk" ? Plasmoid.configuration.diskIcon
+             : metric === "cpu" ? Plasmoid.configuration.cpuIcon
+             : Plasmoid.configuration.gpuIcon;
+    }
+
+    // Per-metric {variables} available to "custom" format templates
+    function templateVars(metric) {
+        if (metric === "ram") {
+            return { usage: pct(ramSensor.value), used: fmt(ramUsed), free: fmt(ramFree), total: fmt(ramTotal) };
+        }
+        if (metric === "disk") {
+            return { usage: pct(diskSensor.value), used: fmt(diskUsed), free: fmt(diskFree), total: fmt(diskTotal) };
+        }
+        if (metric === "cpu") {
+            return { usage: pct(cpuUsage.value), temp: deg(cpuTempMax.value), tempavg: deg(cpuTempAvg.value) };
+        }
+        if (metric === "gpu") {
+            return { usage: pct(gpuUsage.value), temp: deg(gpuTemp.value), peak: deg(gpuPeak), vram: fmt(gpuVram), vramtotal: fmt(gpuVramTotal), power: fmt(gpuPower) };
+        }
+        return {};
+    }
+
+    function metricFormat(metric) {
+        return metric === "ram" ? Plasmoid.configuration.ramFormat
+             : metric === "disk" ? Plasmoid.configuration.diskFormat
+             : metric === "cpu" ? Plasmoid.configuration.cpuFormat
+             : Plasmoid.configuration.gpuFormat;
+    }
+
+    function expandTemplate(metric, tpl) {
+        const vars = templateVars(metric);
+        return tpl.replace(/\{(\w+)\}/g, (match, name) => vars[name] !== undefined ? vars[name] : match);
+    }
+
+    function partText(metric, part) {
+        if (part === "custom") {
+            return expandTemplate(metric, metricFormat(metric));
+        }
+        if (metric === "ram") {
+            return part === "abs" ? fmt(ramUsed) : pct(ramSensor.value);
+        }
+        if (metric === "disk") {
+            return part === "abs" ? fmt(diskUsed) : pct(diskSensor.value);
+        }
+        if (metric === "cpu") {
+            return part === "temp" ? deg(cpuTempMax.value) : pct(cpuUsage.value);
+        }
+        if (metric === "gpu") {
+            return part === "temp" ? deg(gpuTemp.value) : pct(gpuUsage.value);
+        }
+        return "—";
+    }
+
+    // Custom templates mix several values, so they color by the metric's
+    // worst tier.
+    function partTier(metric, part) {
+        if (metric === "ram") {
+            return ramTier;
+        }
+        if (metric === "disk") {
+            return diskTier;
+        }
+        if (metric === "cpu") {
+            return part === "usage" ? cpuUsageTier
+                 : part === "temp" ? cpuTempTier
+                 : Math.max(cpuUsageTier, cpuTempTier);
+        }
+        if (metric === "gpu") {
+            return part === "usage" ? gpuUsageTier
+                 : part === "temp" ? gpuTempTier
+                 : Math.max(gpuUsageTier, gpuTempTier);
+        }
+        return 0;
+    }
+
+    function partKind(part) {
+        return part === "temp" ? "temp" : part === "abs" ? "abs" : part === "custom" ? "custom" : "pct";
+    }
+
+    // --- Appearance ------------------------------------------------------
+    readonly property bool useIconLabels: Plasmoid.configuration.labelStyle === 1
+
+    // Empty family / size 0 = follow the theme; labels scale with the
+    // theme's small/default ratio
+    readonly property string stripFontFamily: Plasmoid.configuration.fontFamily !== ""
+        ? Plasmoid.configuration.fontFamily
+        : Kirigami.Theme.defaultFont.family
+    readonly property real stripPointSize: Plasmoid.configuration.fontSize > 0
+        ? Plasmoid.configuration.fontSize
+        : Kirigami.Theme.defaultFont.pointSize
+    readonly property real labelPointSize: stripPointSize
+        * Kirigami.Theme.smallFont.pointSize / Kirigami.Theme.defaultFont.pointSize
+
+    // Each color independently falls back to the Plasma theme unless its
+    // "custom" switch is on. Labels and separators default to the theme's
+    // disabled-text (dimmed) color so values stand out.
+    readonly property color valueColor: Plasmoid.configuration.customTextColor ? Plasmoid.configuration.textColor : Kirigami.Theme.textColor
+    readonly property color labelColor: Plasmoid.configuration.customLabelColor ? Plasmoid.configuration.labelColor : Kirigami.Theme.disabledTextColor
+    readonly property color sepColor: Plasmoid.configuration.customSeparatorColor ? Plasmoid.configuration.separatorColor : Kirigami.Theme.disabledTextColor
+    readonly property color warnColor: Plasmoid.configuration.customWarningColor ? Plasmoid.configuration.warningColor : Kirigami.Theme.neutralTextColor
+    readonly property color critColor: Plasmoid.configuration.customCriticalColor ? Plasmoid.configuration.criticalColor : Kirigami.Theme.negativeTextColor
 
     readonly property int ramTier: tier(ramSensor.value, Plasmoid.configuration.ramThreshold)
     // Disk usage is a capacity fact, not an emergency — never goes red
@@ -117,44 +255,65 @@ PlasmoidItem {
         onNewData: source => disconnectSource(source)
     }
 
+    // Kept for sizing icon labels to the strip's font height
     TextMetrics {
         id: pctMetrics
-        font: Kirigami.Theme.defaultFont
+        font.family: root.stripFontFamily
+        font.pointSize: root.stripPointSize
         text: "100%"
     }
 
-    TextMetrics {
-        id: degMetrics
-        font: Kirigami.Theme.defaultFont
-        text: "100°"
-    }
-
     component GroupLabel : PC3.Label {
-        color: Kirigami.Theme.disabledTextColor
-        font: Kirigami.Theme.smallFont
+        visible: !root.useIconLabels
+        color: root.labelColor
+        font.family: root.stripFontFamily
+        font.pointSize: root.labelPointSize
         Layout.alignment: Qt.AlignBaseline
     }
 
-    // Fixed-width, left-aligned, tabular digits: the value hugs its label
-    // and the row never shifts as values tick between 1 and 3 digits.
+    // Icon alternative to GroupLabel — tracks the strip's font height so it
+    // scales with the font size setting. Monochrome (symbolic) icons take
+    // the label color; colorful ones keep their own palette.
+    component MetricIcon : Kirigami.Icon {
+        visible: root.useIconLabels
+        color: root.labelColor
+        Layout.alignment: Qt.AlignVCenter
+        Layout.preferredWidth: Math.ceil(pctMetrics.height * 1.2)
+        Layout.preferredHeight: Layout.preferredWidth
+    }
+
+    // Values use their natural width by default; a configured valueWidth
+    // gives every slot the same fixed width (right-aligned, so the number
+    // stays flush against what follows and the row never shifts as values
+    // tick). Custom templates are free text and always fit their content.
     component Value : PC3.Label {
         property int tier: 0
-        property bool temp: false
-        horizontalAlignment: Text.AlignLeft
+        property string kind: "pct" // "pct" | "temp" | "abs" | "custom"
+        horizontalAlignment: Text.AlignRight
         Layout.alignment: Qt.AlignBaseline
-        Layout.preferredWidth: Math.ceil(temp ? degMetrics.advanceWidth : pctMetrics.advanceWidth)
+        Layout.preferredWidth: kind !== "custom" && Plasmoid.configuration.valueWidth > 0
+            ? Plasmoid.configuration.valueWidth
+            : -1
+        font.family: root.stripFontFamily
+        font.pointSize: root.stripPointSize
         font.features: ({ "tnum": 1 })
         color: root.tierColor(tier)
     }
 
     component Group : RowLayout {
-        spacing: Kirigami.Units.smallSpacing
+        spacing: Plasmoid.configuration.valueGap
     }
 
+    // `when` carries the between-visible-groups condition; the global
+    // "show separators" switch is folded in here so instances stay simple.
     component Sep : PC3.Label {
+        property bool when: true
+        visible: Plasmoid.configuration.showSeparators && when
         text: "|"
-        color: Kirigami.Theme.disabledTextColor
+        color: root.sepColor
         opacity: 0.5
+        font.family: root.stripFontFamily
+        font.pointSize: root.stripPointSize
         Layout.alignment: Qt.AlignBaseline
     }
 
@@ -195,34 +354,40 @@ PlasmoidItem {
         RowLayout {
             id: row
             anchors.centerIn: parent
-            spacing: Kirigami.Units.smallSpacing * 2
+            spacing: Plasmoid.configuration.groupGap
 
-            Group {
-                GroupLabel { text: i18n("RAM") }
-                Value { text: root.pct(ramSensor.value); tier: root.ramTier }
-            }
+            // One delegate per visible metric, in configured order; each
+            // renders its parts in configured order. A separator leads every
+            // group but the first, so they only appear between groups.
+            Repeater {
+                model: root.visibleMetrics
 
-            Sep {}
+                delegate: RowLayout {
+                    id: metricDelegate
 
-            Group {
-                GroupLabel { text: i18n("DISK") }
-                Value { text: root.pct(diskSensor.value); tier: root.diskTier }
-            }
+                    required property var modelData
+                    required property int index
 
-            Sep {}
+                    spacing: Plasmoid.configuration.groupGap
 
-            Group {
-                GroupLabel { text: i18n("CPU") }
-                Value { text: root.pct(cpuUsage.value); tier: root.cpuUsageTier }
-                Value { text: root.deg(cpuTempMax.value); tier: root.cpuTempTier; temp: true }
-            }
+                    Sep { when: metricDelegate.index > 0 }
 
-            Sep {}
+                    Group {
+                        MetricIcon { source: root.metricIcon(metricDelegate.modelData.key) }
+                        GroupLabel { text: root.metricLabel(metricDelegate.modelData.key) }
 
-            Group {
-                GroupLabel { text: i18n("GPU") }
-                Value { text: root.pct(gpuUsage.value); tier: root.gpuUsageTier }
-                Value { text: root.deg(gpuTemp.value); tier: root.gpuTempTier; temp: true }
+                        Repeater {
+                            model: metricDelegate.modelData.parts
+
+                            delegate: Value {
+                                required property string modelData
+                                text: root.partText(metricDelegate.modelData.key, modelData)
+                                tier: root.partTier(metricDelegate.modelData.key, modelData)
+                                kind: root.partKind(modelData)
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -235,14 +400,16 @@ PlasmoidItem {
         Layout.minimumWidth: Layout.preferredWidth
         Layout.minimumHeight: Layout.preferredHeight
 
+        // The popup keeps the theme font, so it measures with its own metrics
+        TextMetrics { id: popupPctMetrics; font: Kirigami.Theme.defaultFont; text: "100%" }
+        TextMetrics { id: popupDegMetrics; font: Kirigami.Theme.defaultFont; text: "100°" }
+
         // Popup-only sensors — instantiated on first expand
         Sensors.Sensor { id: gpuName;      sensorId: "gpu/gpu0/name";              updateRateLimit: root.rateMs }
         Sensors.Sensor { id: gpuCoreFreq;  sensorId: "gpu/gpu0/coreFrequency";     updateRateLimit: root.rateMs }
         Sensors.Sensor { id: gpuMemFreq;   sensorId: "gpu/gpu0/memoryFrequency";   updateRateLimit: root.rateMs }
-        Sensors.Sensor { id: ramFree;      sensorId: "memory/physical/free";       updateRateLimit: root.rateMs }
         Sensors.Sensor { id: swapUsed;     sensorId: "memory/swap/used";           updateRateLimit: root.rateMs }
         Sensors.Sensor { id: swapTotal;    sensorId: "memory/swap/total";          updateRateLimit: root.rateMs }
-        Sensors.Sensor { id: diskFree;     sensorId: "disk/all/free";              updateRateLimit: root.rateMs }
 
         ColumnLayout {
             id: content
@@ -388,12 +555,12 @@ PlasmoidItem {
                         DetailLabel {
                             text: root.pct(coreUsage.value)
                             horizontalAlignment: Text.AlignRight
-                            Layout.preferredWidth: Math.ceil(pctMetrics.advanceWidth)
+                            Layout.preferredWidth: Math.ceil(popupPctMetrics.advanceWidth)
                         }
                         DetailLabel {
                             text: root.deg(coreTemp.value)
                             horizontalAlignment: Text.AlignRight
-                            Layout.preferredWidth: Math.ceil(degMetrics.advanceWidth)
+                            Layout.preferredWidth: Math.ceil(popupDegMetrics.advanceWidth)
                         }
                         DetailLabel {
                             text: root.fmt(coreFreq)

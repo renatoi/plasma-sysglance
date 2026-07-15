@@ -1,0 +1,50 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+env:
+  PKG: com.renato.sysglance
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify tag matches metadata.json version
+        run: |
+          VERSION=$(jq -r '.KPlugin.Version' metadata.json)
+          TAG="${GITHUB_REF_NAME#v}"
+          if [ "$VERSION" != "$TAG" ]; then
+            echo "::error::metadata.json Version ($VERSION) does not match tag ($TAG)"
+            exit 1
+          fi
+
+      - name: Build .plasmoid package
+        run: |
+          zip -r "$PKG-$GITHUB_REF_NAME.plasmoid" metadata.json contents LICENSE -x '*~'
+
+      - name: Extract changelog section for this version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          awk -v ver="$TAG" '
+            $0 ~ "^## \\[" ver "\\]" { found = 1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md > RELEASE_NOTES.md
+          if [ ! -s RELEASE_NOTES.md ]; then
+            echo "::warning::No CHANGELOG.md section found for $TAG"
+            echo "See CHANGELOG.md for details." > RELEASE_NOTES.md
+          fi
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: "*.plasmoid"
+          body_path: RELEASE_NOTES.md

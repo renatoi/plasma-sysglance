@@ -14,6 +14,17 @@ Clicking it opens a detail popup; hovering shows a summary tooltip.
 - **Panel strip** — RAM used %, disk used % (all filesystems), CPU usage % +
   hottest-core temperature, GPU usage % + temperature. Tabular, fixed-width
   digits so the row never shifts as values tick.
+- **Configurable strip layout** (Appearance settings page) — a reorderable
+  metric list: drag to set left-to-right order, checkbox to show/hide, and
+  a per-metric dropdown picking which values it shows and in what order
+  (usage %, temperature for CPU/GPU, used amount for RAM/disk). Stored as
+  `metricOrder` plus per-metric `Shown`/`Parts` (ordered comma-separated
+  part keys) in the config.
+- **Appearance options** — text or icon labels (icons picked via KDE's icon
+  dialog, including custom PNG/SVG files); font size (0 = theme default);
+  value width fit-content (default) or fixed slots (row never shifts);
+  gaps inside groups and between groups; custom colors for values, labels,
+  warning and critical states (defaults follow the Plasma theme).
 - **Threshold color coding** — values turn amber at the configured threshold
   and red at threshold + 10. Disk only ever turns amber (a nearly-full disk is
   a capacity fact, not an emergency). Thresholds and update interval are
@@ -26,6 +37,17 @@ Clicking it opens a detail popup; hovering shows a summary tooltip.
 - Reads everything from KSystemStats via `org.kde.ksysguard.sensors` — the
   same daemon Plasma's own System Monitor widgets use. NVIDIA GPUs work
   through the daemon's NVML backend; no lm_sensors hwmon entry needed.
+
+## Releasing
+
+1. Bump `KPlugin.Version` in `metadata.json` and add a section to
+   `CHANGELOG.md` (`## [x.y] - date`).
+2. Commit, then tag and push: `git tag vx.y && git push origin main vx.y`.
+3. GitHub Actions builds the `.plasmoid` and publishes a GitHub release with
+   the changelog section as notes (`.github/workflows/release.yml`).
+4. For the KDE Store (store.kde.org), upload the `.plasmoid` from the GitHub
+   release (or `make dist`) to the product page under
+   *Plasma 6 Applets*.
 
 ## Requirements
 

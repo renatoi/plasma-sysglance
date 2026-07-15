@@ -8,6 +8,134 @@
         <entry name="updateInterval" type="Int">
             <default>2</default>
         </entry>
+        <!-- Strip content: metricOrder is the left-to-right order of metrics;
+             <metric>Shown toggles a metric; <metric>Parts is an ordered
+             comma-separated list of the values it shows — "usage" (percent),
+             "temp" (CPU/GPU temperature), "abs" (RAM/disk used amount). -->
+        <entry name="metricOrder" type="String">
+            <default>ram,disk,cpu,gpu</default>
+        </entry>
+        <entry name="ramShown" type="Bool">
+            <default>true</default>
+        </entry>
+        <entry name="diskShown" type="Bool">
+            <default>true</default>
+        </entry>
+        <entry name="cpuShown" type="Bool">
+            <default>true</default>
+        </entry>
+        <entry name="gpuShown" type="Bool">
+            <default>true</default>
+        </entry>
+        <entry name="ramParts" type="String">
+            <default>usage</default>
+        </entry>
+        <entry name="diskParts" type="String">
+            <default>usage</default>
+        </entry>
+        <entry name="cpuParts" type="String">
+            <default>usage,temp</default>
+        </entry>
+        <entry name="gpuParts" type="String">
+            <default>usage,temp</default>
+        </entry>
+        <!-- Templates used when a metric's Parts is "custom"; {variables}
+             are expanded per metric (see templateVars in main.qml) -->
+        <entry name="ramFormat" type="String">
+            <default>{used} of {total}</default>
+        </entry>
+        <entry name="diskFormat" type="String">
+            <default>{used} of {total}</default>
+        </entry>
+        <entry name="cpuFormat" type="String">
+            <default>{usage} {temp}</default>
+        </entry>
+        <entry name="gpuFormat" type="String">
+            <default>{usage} {temp} {vram}</default>
+        </entry>
+        <!-- Appearance: 0 = text labels, 1 = icon labels -->
+        <entry name="labelStyle" type="Int">
+            <default>0</default>
+        </entry>
+        <entry name="ramLabel" type="String">
+            <default>RAM</default>
+        </entry>
+        <entry name="diskLabel" type="String">
+            <default>DISK</default>
+        </entry>
+        <entry name="cpuLabel" type="String">
+            <default>CPU</default>
+        </entry>
+        <entry name="gpuLabel" type="String">
+            <default>GPU</default>
+        </entry>
+        <entry name="ramIcon" type="String">
+            <default>memory</default>
+        </entry>
+        <entry name="diskIcon" type="String">
+            <default>drive-harddisk</default>
+        </entry>
+        <entry name="cpuIcon" type="String">
+            <default>cpu</default>
+        </entry>
+        <entry name="gpuIcon" type="String">
+            <default>video-display</default>
+        </entry>
+        <!-- Strip font: empty family / size 0 = follow the theme -->
+        <entry name="fontFamily" type="String">
+            <default></default>
+        </entry>
+        <entry name="fontSize" type="Int">
+            <default>0</default>
+        </entry>
+        <!-- Width of each value slot in px; 0 = fit content -->
+        <entry name="valueWidth" type="Int">
+            <default>0</default>
+        </entry>
+        <!-- Gaps in pixels: inside a group (label↔value, value↔value) and
+             between groups (around the | separators) -->
+        <entry name="valueGap" type="Int">
+            <default>4</default>
+        </entry>
+        <entry name="groupGap" type="Int">
+            <default>8</default>
+        </entry>
+        <!-- The | separators between groups can be turned off entirely -->
+        <entry name="showSeparators" type="Bool">
+            <default>true</default>
+        </entry>
+        <!-- Each color follows the Plasma theme unless its custom<X> switch
+             is on -->
+        <entry name="customTextColor" type="Bool">
+            <default>false</default>
+        </entry>
+        <entry name="customLabelColor" type="Bool">
+            <default>false</default>
+        </entry>
+        <entry name="customSeparatorColor" type="Bool">
+            <default>false</default>
+        </entry>
+        <entry name="customWarningColor" type="Bool">
+            <default>false</default>
+        </entry>
+        <entry name="customCriticalColor" type="Bool">
+            <default>false</default>
+        </entry>
+        <entry name="textColor" type="String">
+            <default>#fcfcfc</default>
+        </entry>
+        <entry name="labelColor" type="String">
+            <default>#a1a9b1</default>
+        </entry>
+        <entry name="separatorColor" type="String">
+            <default>#a1a9b1</default>
+        </entry>
+        <entry name="warningColor" type="String">
+            <default>#f67400</default>
+        </entry>
+        <entry name="criticalColor" type="String">
+            <default>#da4453</default>
+        </entry>
         <entry name="ramThreshold" type="Int">
             <default>85</default>
         </entry>
